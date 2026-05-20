@@ -1,3 +1,3 @@
 import streamlit as st
-st.title('천안오성고등학교 김선율 화이팅')
+st.title('천안오성고 아자스')
 st.write('바이브코딩 재미있다!!')

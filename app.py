@@ -1,88 +1,58 @@
 import streamlit as st
-from google import genai
-from google.genai import types
-from google.genai.errors import APIError
+import pandas as pd
+import plotly.express as px
+import google.generativeai as genai
+from datetime import datetime
 
-# 1. 페이지 설정 및 제목
-st.set_page_config(page_title="설렘 가득 연애 상담소", page_icon="💖", layout="centered")
-st.title("💖 설렘 가득 연애 상담소")
-st.caption("연애 고민, 썸, 이별... 혼자 끙끙 앓지 말고 제미나이 언니/오빠에게 물어보세요!")
+# 1. 페이지 기본 설정 및 테마
+st.set_page_config(
+    page_title="스마트 AI 데일리 플래너",
+    page_icon="📅",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# 2. Streamlit Secrets에서 API 키 불러오기 및 클라이언트 초기화
-if "GEMINI_API_KEY" not in st.secrets:
-    st.error(".streamlit/secrets.toml 파일에 'GEMINI_API_KEY'가 설정되지 않았습니다. 패널 측면의 설정을 확인해 주세요.")
-    st.stop()
+# 2. Gemini API 세팅 및 예외 처리
+ai_available = False
+if "GEMINI_API_KEY" in st.secrets:
+    try:
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+        # 가볍고 빠른 gemini-2.5-flash-lite 모델 지정
+        model = genai.GenerativeModel('gemini-2.5-flash-lite')
+        ai_available = True
+    except Exception as e:
+        st.sidebar.error(f"AI 모델 로드 실패: {e}")
+else:
+    st.sidebar.warning("⚠️ 세크리트(Secrets)에 'GEMINI_API_KEY'를 등록하면 AI 코칭 기능을 사용할 수 있습니다.")
 
-@st.cache_resource
-def init_client():
-    # 최신 google-genai 라이브러리 방식을 사용합니다.
-    return genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+# 3. 데이터 및 상태 초기화 (Session State)
+if "tasks" not in st.session_state:
+    st.session_state.tasks = [
+        {"할일": "Streamlit 플래너 앱 만들기", "카테고리": "개발/공부", "우선순위": "높음", "완료": True},
+        {"할일": "깃허브에 코드 푸시하기", "카테고리": "개발/공부", "우선순위": "높음", "완료": False},
+        {"할일": "물 2리터 마시기", "카테고리": "건강/라이프", "우선순위": "보통", "완료": False},
+    ]
 
-try:
-    client = init_client()
-except Exception as e:
-    st.error(f"클라이언트 초기화 중 오류가 발생했습니다: {e}")
-    st.stop()
+# 4. 사이드바 - 오늘 나의 다짐 & AI 피드백
+st.sidebar.header("🎯 오늘의 다짐 & AI 코칭")
+today_quote = st.sidebar.text_area("오늘의 한 줄 다짐이나 목표를 적어보세요:", "오늘 하루도 알차고 생산성 있게 보내기!")
 
-# 3. 세션 상태(Session State)를 활용한 채팅 기록 유지
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+if st.sidebar.button("🤖 AI에게 응원받기"):
+    if ai_available:
+        with st.sidebar.spinner("AI 라이프 코치가 분석 중..."):
+            try:
+                prompt = f"사용자의 오늘 다짐: '{today_quote}'. 이 다짐을 한 사람에게 동기부여를 줄 수 있는 따뜻하고 명확한 조언과 행동 팁 3가지를 짤막하게 작성해줘."
+                response = model.generate_content(prompt)
+                st.sidebar.success("💡 AI 코치의 메시지")
+                st.sidebar.info(response.text)
+            except Exception as e:
+                st.sidebar.error(f"AI 요청 중 오류가 발생했습니다: {e}")
+    else:
+        st.sidebar.info("API 키가 설정되지 않아 기본 응원을 보냅니다: '오늘도 파이팅입니다! 할 수 있어요!'")
 
-# 4. 이전 대화 기록 화면에 출력
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+# 5. 메인 화면 - 헤더 영역
+st.title("📅 스마트 AI 데일리 플래너 & 트래커")
+st.markdown(f"**오늘은 {datetime.now().strftime('%Y년 %m월 %d일')} 입니다.** 목표를 달성하고 시각화된 통계를 확인하세요!")
+st.write("---")
 
-# 5. 사용자 입력 받기
-if user_input := st.chat_input("연애 고민을 편하게 털어놓으세요..."):
-    
-    # 사용자 메시지 화면 표시 및 세션 저장
-    with st.chat_message("user"):
-        st.markdown(user_input)
-    st.session_state.messages.append({"role": "user", "content": user_input})
-
-    # 6. 제미나이 API 호출 및 답변 생성 (오류 처리 포함)
-    with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        
-        # 연애 상담사 페르소나 주입을 위한 시스템 지침(System Instruction) 설정
-        system_instruction = (
-            "당신은 공감 능력이 뛰어나고 다정한 연애 상담 전문가입니다. "
-            "사용자의 연애 고민(썸, 연애, 이별 등)을 경청하고, 따뜻하게 위로하며, "
-            "현실적이면서도 센스 있는 조언을 건네주세요. 친근하고 다정하게 대답해 주세요."
-        )
-        
-        # 모델에 전달할 대화 내역 구성
-        contents = []
-        for msg in st.session_state.messages:
-            role = "user" if msg["role"] == "user" else "model"
-            contents.append(types.Content(
-                role=role,
-                parts=[types.Part.from_text(text=msg["content"])]
-            ))
-
-        try:
-            with st.spinner("생각 중... 💬"):
-                # 최신 gemini-2.5-flash-lite 모델 사용
-                response = client.models.generate_content(
-                    model='gemini-2.5-flash-lite',
-                    contents=contents,
-                    config=types.GenerateContentConfig(
-                        system_instruction=system_instruction,
-                        temperature=0.7, # 창의적이고 공감대 높은 답변을 위해 0.7 설정
-                    )
-                )
-            
-            # 답변 출력 및 세션 저장
-            ai_response = response.text
-            message_placeholder.markdown(ai_response)
-            st.session_state.messages.append({"role": "assistant", "content": ai_response})
-            
-        except APIError as e:
-            # 구글 API 관련 에러 처리
-            error_msg = f"구글 API 오류가 발생했습니다: {e.message} (코드: {e.code})"
-            message_placeholder.error(error_msg)
-        except Exception as e:
-            # 기타 일반 에러 처리
-            error_msg = f"예기치 못한 오류가 발생했습니다: {str(e)}"
-            message_placeholder.error(error_msg)
+# 6. 메인 화면 - 할 일 추가 레이아웃 (3

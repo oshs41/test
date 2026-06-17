@@ -72,7 +72,7 @@ def make_outfit(style, top, weather):
 # -----------------------------
 st.set_page_config(page_title="상의 중심 코디 앱", page_icon="👕")
 
-st.title("👕 상의 코디 추천 앱")
+st.title("👕 상의 코디 스타일링")
 st.write("상의 하나를 선택하면 전체 코디를 완성해드립니다.")
 
 # 입력

@@ -1,9 +1,10 @@
+```python
 import random
 import urllib.parse
 import streamlit as st
 
 st.set_page_config(
-    page_title="악세살리 코디 스타일링",
+    page_title="악세사리 코디 스타일링",
     page_icon="👔",
     layout="wide"
 )
@@ -44,10 +45,10 @@ STYLE_TIPS = {
 }
 
 # -------------------
-# 악세사리 코디 스타일링
+# 제목
 # -------------------
 
-st.title("👔 Accessory Outfit Finder")
+st.title("👔 악세사리 코디 스타일링")
 st.caption("악세사리를 활용한 옷 코디 유튜브 검색 앱")
 
 st.divider()
@@ -158,3 +159,6 @@ st.divider()
 st.caption(
     "유튜브 검색 결과를 활용하여 악세사리 중심 코디 영상을 쉽게 찾을 수 있습니다."
 )
+```
+
+        

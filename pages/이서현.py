@@ -3,7 +3,7 @@ import urllib.parse
 import streamlit as st
 
 st.set_page_config(
-    page_title="Accessory Outfit Finder",
+    page_title="악세사리 코디 스타일링",
     page_icon="👔",
     layout="wide"
 )
@@ -47,7 +47,7 @@ STYLE_TIPS = {
 # 제목
 # -------------------
 
-st.title("👔 Accessory Outfit Finder")
+st.title("👔 악세사리 코디 스타일링")
 st.caption("악세사리를 활용한 옷 코디 유튜브 검색 앱")
 
 st.divider()

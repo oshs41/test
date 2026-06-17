@@ -44,7 +44,7 @@ STYLE_TIPS = {
 }
 
 # -------------------
-# 제목
+# 악세사리 코디 스타일링
 # -------------------
 
 st.title("👔 Accessory Outfit Finder")

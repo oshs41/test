@@ -3,7 +3,7 @@ import urllib.parse
 import streamlit as st
 
 st.set_page_config(
-    page_title="Accessory Outfit Finder",
+    page_title="악세살리 코디 스타일링",
     page_icon="👔",
     layout="wide"
 )
